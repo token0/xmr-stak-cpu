@@ -447,7 +447,7 @@ void jpsock::disconnect()
 	sck->close(true);
 }
 
-bool jpsock::cmd_ret_wait(const char* sPacket, opq_json_val& poResult)
+bool jpsock::cmd_ret_wait(const char* sPacket, opq_json_val& poResult, int attempt)
 {
 	//printf("SEND: %s\n", sPacket);
 
@@ -481,9 +481,15 @@ bool jpsock::cmd_ret_wait(const char* sPacket, opq_json_val& poResult)
 	//This means that there was no socket error, but the server is not taking to us
 	if(!bResult)
 	{
-		set_socket_error("CALL error: Timeout while waiting for a reply");
-		disconnect();
-		return false;
+		if (attempt > 1)
+		{
+			set_socket_error("CALL error: Timeout while waiting for a reply");
+			disconnect();
+			return false;
+		} else {
+			//TODO log a warning
+			return cmd_ret_wait(sPacket, poResult, attempt++);
+		}
 	}
 
 	if(bSuccess)
